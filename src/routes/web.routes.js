@@ -15,4 +15,10 @@ router.get('/home', (_, res) => {
   res.sendFile(join(PUBLIC_PATH, 'home.html'));
 });
 
+router.get('/room/:roomId', (req, res) => {
+  // TODO: validar parametro do roomId aqui
+  res.sendFile(join(PUBLIC_PATH, 'room.html'));
+});
+
+
 export default router;
