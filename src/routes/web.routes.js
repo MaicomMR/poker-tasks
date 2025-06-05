@@ -1,24 +1,21 @@
-// src/routes/web.routes.js
+// src/routes/api.routes.js
 import { Router } from 'express';
-import { join, dirname } from 'node:path';
+import { createRoom, joinRoom } from '../controllers/room.create.controller.js';
+import { createRoomRules } from '../requests/room.create.request.js';
+import { joinRoomRules } from '../requests/room.join.request.js';
+import { validate } from '../requests/validate.js';
 import { fileURLToPath } from 'node:url';
+import { join, dirname } from 'node:path';
 
 const router = Router();
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const PUBLIC_PATH = join(__dirname, '../../public'); // volta duas pastas
+const PUBLIC_PATH = join(__dirname, '../../public');
 
 router.get('/', (_, res) => {
-  res.sendFile(join(PUBLIC_PATH, 'index.html'));
+  res.sendFile(join(PUBLIC_PATH, 'home.html'));     // <- página de escolha
 });
 
-router.get('/home', (_, res) => {
-  res.sendFile(join(PUBLIC_PATH, 'home.html'));
-});
-
-router.get('/room/:roomId', (req, res) => {
-  // TODO: validar parametro do roomId aqui
-  res.sendFile(join(PUBLIC_PATH, 'room.html'));
-});
-
+router.post('/rooms', createRoomRules, validate, createRoom);
+router.post('/rooms/:roomId/join', joinRoomRules, validate, joinRoom);
 
 export default router;

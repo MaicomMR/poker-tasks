@@ -1,28 +1,19 @@
-// src/server.js
 import express from 'express';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
-import webRoutes from './routes/web.routes.js';
+import Routes from './routes/web.routes.js';
+import registerRoomSocket from './sockets/room.handlers.js';
 
 const app = express();
-
-/* Arquivos estáticos (css, js do front) em /public */
+app.use(express.json());
 app.use(express.static('public'));
+app.use('/', Routes);
 
-/* Rotas HTTP */
-app.use('/', webRoutes);
-
-/* WebSocket */
 const httpServer = createServer(app);
-const io = new Server(httpServer);
+const io = new Server(httpServer, { cors: { origin: '*' } });
 
-io.on('connection', (socket) => {
-  socket.on('chat message', (msg) => {
-    io.emit('chat message', msg);
-    console.log(msg);
-  });
-});
+registerRoomSocket(io);
 
-httpServer.listen(3000, () => {
-  console.log('server running at http://localhost:3000');
-});
+httpServer.listen(3000, () =>
+  console.log('server running at http://localhost:3000')
+);

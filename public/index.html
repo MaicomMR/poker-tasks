@@ -1,100 +1,66 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="pt-BR">
 <head>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>Socket.IO chat</title>
-    <style>
-        body {
-            margin: 0;
-            padding-bottom: 3rem;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        #form {
-            background: rgba(0, 0, 0, 0.15);
-            padding: 0.25rem;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            display: flex;
-            height: 3rem;
-            box-sizing: border-box;
-            backdrop-filter: blur(10px);
-        }
-
-        #input {
-            border: none;
-            padding: 0 1rem;
-            flex-grow: 1;
-            border-radius: 2rem;
-            margin: 0.25rem;
-        }
-
-        #input:focus {
-            outline: none;
-        }
-
-        #form>button {
-            background: #333;
-            border: none;
-            padding: 0 1rem;
-            margin: 0.25rem;
-            border-radius: 3px;
-            outline: none;
-            color: #fff;
-        }
-
-        #messages {
-            list-style-type: none;
-            margin: 0;
-            padding: 0;
-        }
-
-        #messages>li {
-            padding: 0.5rem 1rem;
-        }
-
-        #messages>li:nth-child(odd) {
-            background: #efefef;
-        }
-    </style>
-
-
+  <meta charset="UTF-8" />
+  <title>Salas – TaskPoker</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 2rem; }
+    #joinForm { margin-top: 1rem; display: none; }
+  </style>
 </head>
-
 <body>
-    <ul id="messages"></ul>
-    <form id="form" action="">
-        <input id="input" autocomplete="off" /><button>Send</button>
-    </form>
-</body>
+  <button id="btnCreate">Criar Sala</button>
+  <button id="btnJoin">Entrar em uma Sala</button>
 
-<script src="/socket.io/socket.io.js"></script>
+  <!-- formulário que aparece só quando clicar em “Entrar” -->
+  <form id="joinForm">
+    <input id="roomInput" type="text" maxlength="6" placeholder="ID da sala (6 dígitos)" required />
+    <button>Entrar</button>
+  </form>
+
+  <!-- … (restante do HTML igual) … -->
 <script>
-  const socket = io();
+  const btnCreate = document.getElementById('btnCreate');
+  const btnJoin   = document.getElementById('btnJoin');
+  const joinForm  = document.getElementById('joinForm');
+  const roomInput = document.getElementById('roomInput');
 
-  const form = document.getElementById('form');
-  const input = document.getElementById('input');
-  const messages = document.getElementById('messages');
+  // caracteres permitidos
+  const CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (input.value) {
-      socket.emit('chat message', input.value);
-      input.value = '';
+  // gera string aleatória de 6 caracteres a partir de CHARS
+  function gerarIdSala(tamanho = 6) {
+    let id = '';
+    for (let i = 0; i < tamanho; i++) {
+      id += CHARS[Math.floor(Math.random() * CHARS.length)];
     }
+    return id;
+  }
+
+  btnCreate.addEventListener('click', () => {
+    const id = gerarIdSala();
+    alert(`Sala criada! ID: ${id}`);
+    // socket.emit('criarSala', id);
   });
 
-  socket.on('chat message', (msg) => {
-    const item = document.createElement('li');
-    item.textContent = msg;
-    messages.appendChild(item);
-    window.scrollTo(0, document.body.scrollHeight);
+  btnJoin.addEventListener('click', () => {
+    joinForm.style.display = 'block';
+    roomInput.focus();
+  });
+
+  joinForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = roomInput.value.trim().toUpperCase();
+    if (!/^[0-9A-Z]{6}$/.test(id)) {
+      alert('ID inválido. Use 6 caracteres 0-9 ou A-Z.');
+      return;
+    }
+    alert(`Tentando entrar na sala ${id}…`);
+    // socket.emit('entrarSala', id);
+    roomInput.value = '';
+    joinForm.style.display = 'none';
   });
 </script>
 
-
-
+</body>
 </html>
