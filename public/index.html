@@ -2,65 +2,56 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Salas – TaskPoker</title>
-  <style>
-    body { font-family: system-ui, sans-serif; padding: 2rem; }
-    #joinForm { margin-top: 1rem; display: none; }
-  </style>
+  <title>Poker Tasks • Home</title>
 </head>
 <body>
-  <button id="btnCreate">Criar Sala</button>
-  <button id="btnJoin">Entrar em uma Sala</button>
+  <h1>Poker Tasks</h1>
 
-  <!-- formulário que aparece só quando clicar em “Entrar” -->
-  <form id="joinForm">
-    <input id="roomInput" type="text" maxlength="6" placeholder="ID da sala (6 dígitos)" required />
-    <button>Entrar</button>
+  <!-- Criar nova sala -->
+  <button id="create">Criar sala</button>
+
+  <hr />
+
+  <!-- Entrar em sala existente -->
+  <form id="join-form">
+    <input
+      id="room-input"
+      placeholder="ID da sala (6 caracteres)"
+      maxlength="6"
+      required
+    />
+    <button type="submit">Entrar na sala</button>
   </form>
 
-  <!-- … (restante do HTML igual) … -->
-<script>
-  const btnCreate = document.getElementById('btnCreate');
-  const btnJoin   = document.getElementById('btnJoin');
-  const joinForm  = document.getElementById('joinForm');
-  const roomInput = document.getElementById('roomInput');
+  <p id="error" style="color:red"></p>
 
-  // caracteres permitidos
-  const CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  <script type="module">
+    import { io } from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
+    const socket = io();
 
-  // gera string aleatória de 6 caracteres a partir de CHARS
-  function gerarIdSala(tamanho = 6) {
-    let id = '';
-    for (let i = 0; i < tamanho; i++) {
-      id += CHARS[Math.floor(Math.random() * CHARS.length)];
-    }
-    return id;
-  }
+    /* --- Criar --- */
+    document.getElementById("create").onclick = async () => {
+      const res = await fetch("/api/rooms", { method: "POST" });
+      const { roomId } = await res.json();
 
-  btnCreate.addEventListener('click', () => {
-    const id = gerarIdSala();
-    alert(`Sala criada! ID: ${id}`);
-    // socket.emit('criarSala', id);
-  });
+      console.log("Criando sala:" + roomId);
+      socket.emit("create room", roomId);     // avisar server em tempo-real
+      location.href = `/room/${roomId}`;      // ir para a sala
+    };
 
-  btnJoin.addEventListener('click', () => {
-    joinForm.style.display = 'block';
-    roomInput.focus();
-  });
+    /* --- Entrar --- */
+    document.getElementById("join-form").onsubmit = async (e) => {
+      e.preventDefault();
+      const roomId = document.getElementById("room-input").value.trim();
 
-  joinForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const id = roomInput.value.trim().toUpperCase();
-    if (!/^[0-9A-Z]{6}$/.test(id)) {
-      alert('ID inválido. Use 6 caracteres 0-9 ou A-Z.');
-      return;
-    }
-    alert(`Tentando entrar na sala ${id}…`);
-    // socket.emit('entrarSala', id);
-    roomInput.value = '';
-    joinForm.style.display = 'none';
-  });
-</script>
-
+      const res = await fetch(`/api/rooms/${roomId}/join`, { method: "POST" });
+      if (res.ok) {
+        location.href = `/room/${roomId}`;    // página da sala
+      } else {
+        document.getElementById("error").textContent =
+          "Sala não encontrada ou já encerrada";
+      }
+    };
+  </script>
 </body>
 </html>
