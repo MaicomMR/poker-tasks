@@ -1,57 +1,47 @@
-const { Server } = require('socket.io');
+import { Server } from 'socket.io';
 
-module.exports = function attachSocket(httpServer) {
-  const io = new Server(httpServer);
-  const rooms   = {};     // { roomId: { votes: { socketId: card } } }
-  const members = {};     // { socketId: name }
+export const ROOMS = new Map(); // roomId -> Set de userIds
 
-  io.on('connection', socket => {
-    socket.on('register-user', ({ roomId, name }) => {
-      members[socket.id] = name;
+export function createSocketRoom(roomId, creatorId) {
+  ROOMS.set(roomId, new Set([creatorId]));
+}
+
+export function addUserToRoom(roomId, userId) {
+  console.log(`Buscando sala ${roomId}`)
+  const room = ROOMS.get(roomId);
+
+  if (!room) return false;
+  room.add(userId);
+  return true;
+}
+
+export function setupSocket(server) {
+  const io = new Server(server, {
+    cors: { origin: '*' },
+  });
+
+  io.on('connection', (socket) => {
+    socket.on('register-user', ({ roomId, userId }) => {
       socket.join(roomId);
-      rooms[roomId] ??= { votes: {} };
-      io.to(roomId).emit('member-joined', { id: socket.id, name });
-    });
-
-    socket.on('vote', ({ roomId, card }) => {
-        // ✅ Garantia de que a sala já existe
-        if (!rooms[roomId]) {
-          socket.emit('error-msg', 'Vote chegou antes de entrar na sala');
-          return;              // sai sem tocar no objeto inexistente
-        }
-      
-        // lógica normal
-        rooms[roomId].votes[socket.id] = card;
-        socket.to(roomId).emit('vote-update', {
-          id: socket.id,
-          name: members[socket.id]
-        });
-      });
-      
-
-    socket.on('reveal', roomId => {
-      const result = Object.fromEntries(
-        Object.entries(rooms[roomId].votes).map(
-          ([id, card]) => [members[id] ?? id, card]
-        )
-      );
-      io.to(roomId).emit('reveal-cards', result);
-    });
-
-    socket.on('reset', roomId => {
-      rooms[roomId].votes = {};
-      io.to(roomId).emit('reset-cards');
+      console.log(`Usuário ${userId} entrou na sala ${roomId}`);
     });
 
     socket.on('disconnect', () => {
-      const name = members[socket.id];
-      delete members[socket.id];
-      for (const roomId of socket.rooms) {
-        if (rooms[roomId]) delete rooms[roomId].votes[socket.id];
-        io.to(roomId).emit('member-left', { id: socket.id, name });
+      for (const [roomId, users] of ROOMS) {
+        users.delete(socket.id);
+        if (users.size === 0) ROOMS.delete(roomId);
       }
     });
   });
+}
 
-  return io; // se quiser usar fora
-};
+export function checkifRoomExists(roomId) {
+  if (!ROOMS.has(roomId)) {
+    console.log(`Criando sala ${roomId}`);
+    ROOMS.set(roomId, new Set());
+    return true;
+  }
+
+  console.log(`${roomId} - Sala já existe`);
+  return false;
+}

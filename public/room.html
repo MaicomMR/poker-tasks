@@ -8,14 +8,23 @@
 <body>
   <h1>Sala: <span id="room-id"></span></h1>
 
+  <button id="leave">Sair da Sala</button>
+
+<script>
+  document.getElementById("leave").onclick = () => {
+    document.cookie = "roomId=; Max-Age=0; path=/";
+    window.location.href = "/";
+  };
+</script>
+
   <script type="module">
     const roomId = location.pathname.split('/').pop();
     document.getElementById('room-id').textContent = roomId;
 
     /* se precisar usar depois (ex.: Socket.IO) */
-    // import { io } from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
-    // const socket = io();
-    // socket.emit('join room', roomId);
+    import { io } from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
+    const socket = io();
+    socket.emit('join room', roomId);
   </script>
 </body>
 </html>
