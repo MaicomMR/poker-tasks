@@ -3,7 +3,6 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { createSocketRoom, addUserToRoom, checkifRoomExists } from '../socket.js';
-import { slugify } from '../utils/slugify.js';
 
 const ROOMS = new Map(); // roomId -> [socketId]
 
