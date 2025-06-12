@@ -6,8 +6,8 @@
   <title>Poker Tasks • Home</title>
 </head>
 
-<script>
-  import getCookie from './getCookie.js'
+<script type="module">
+    import getCookie from '/utils/getCookie.js'
 
   const roomId = getCookie('roomId');
   const userId = getCookie('userId');
@@ -35,6 +35,7 @@
 
   <script type="module">
     import { io } from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
+    import getCookie from '/utils/getCookie.js'
     const socket = io();
 
 
@@ -71,6 +72,7 @@
   </script>
 
   <script type="module">
+    import getCookie from '/utils/getCookie.js'
 
     document.getElementById("create").onclick = async () => {
       let username = getCookie('userId');
