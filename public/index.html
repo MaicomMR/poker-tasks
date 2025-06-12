@@ -7,19 +7,14 @@
 </head>
 
 <script>
+  import getCookie from './getCookie.js'
+
   const roomId = getCookie('roomId');
   const userId = getCookie('userId');
 
   if (roomId && userId) {
     console.log('Reconectando usuário:', userId, 'na sala:', roomId);
     window.location.href = `/room/${roomId}`;
-  }
-
-  function getCookie(name) {
-    return document.cookie
-      .split('; ')
-      .find(row => row.startsWith(name + '='))
-      ?.split('=')[1];
   }
 </script>
 

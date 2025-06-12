@@ -1,30 +1,41 @@
 <!-- room.html -->
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8" />
   <title>Sala</title>
 </head>
+
 <body>
   <h1>Sala: <span id="room-id"></span></h1>
 
   <button id="leave">Sair da Sala</button>
 
-<script>
-  document.getElementById("leave").onclick = () => {
-    document.cookie = "roomId=; Max-Age=0; path=/";
-    window.location.href = "/";
-  };
-</script>
+  <script>
+    document.getElementById("leave").onclick = () => {
+      document.cookie = "roomId=; Max-Age=0; path=/";
+      window.location.href = "/";
+    };
+  </script>
 
   <script type="module">
+    import getCookie from '/utils/getCookie.js'
+
+    let userId = getCookie('userId');
+    if (!userId) {
+      userId = prompt("Para se conectar a sala, digite seu nome:");
+      document.cookie = "userId=" + userId + "; path=/; max-age=31536000";
+    }
+
     const roomId = location.pathname.split('/').pop();
     document.getElementById('room-id').textContent = roomId;
+    console.log(roomId, userId);
 
     /* se precisar usar depois (ex.: Socket.IO) */
     import { io } from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
     const socket = io();
-    socket.emit('join room', roomId);
+    socket.emit('join room', { roomId, userId });
   </script>
 </body>
 </html>
