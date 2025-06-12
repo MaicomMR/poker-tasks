@@ -2,6 +2,31 @@ import { Server } from 'socket.io';
 
 export const ROOMS = new Map(); // roomId -> Set de userIds
 
+export default function registerSocketEvents(socket) {
+  // Evento: Criar sala
+  socket.on('create room', (roomId) => {
+    console.log(`🛠️ Sala criada: ${roomId}`);
+    socket.join(roomId);
+  });
+
+  // Evento: Cadastrar usuário
+  socket.on('register user', (username) => {
+    console.log(`👤 Usuário registrado: ${username}`);
+    socket.data.username = username;
+  });
+
+  socket.on('join room', ({roomId, userId}) => {
+    socket.join(roomId);
+    console.log(`👥 Socket ${socket.id} - ${userId} - entrou na sala ${roomId}`);
+
+    // Enviar mensagem para todos da sala
+    socket.to(roomId).emit('user joined', {
+      user: socket.data.username || socket.id,
+      room: roomId,
+    });
+  });
+}
+
 export function createSocketRoom(roomId, creatorId) {
   ROOMS.set(roomId, new Set([creatorId]));
 }
@@ -33,6 +58,12 @@ export function setupSocket(server) {
       }
     });
   });
+
+  socket.on('join room', roomId => {
+    console.log('[servidor] join room recebido:', roomId);
+    // lógica adicional aqui
+  });
+
 }
 
 export function checkifRoomExists(roomId) {
@@ -45,3 +76,8 @@ export function checkifRoomExists(roomId) {
   console.log(`${roomId} - Sala já existe`);
   return false;
 }
+
+
+// -------
+
+
