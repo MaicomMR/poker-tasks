@@ -28,7 +28,7 @@ export function joinRoom(req, res) {
   const { username } = req.body;
   const { roomId } = req.params;
 
-  const wasCreated = checkifRoomExists(roomId);
+  const wasCreated = checkIfRoomExists(roomId);
 
   res.cookie('roomId', roomId, { maxAge: 86400000, httpOnly: false });
   res.cookie('username', username, { maxAge: 86400000, httpOnly: false });
