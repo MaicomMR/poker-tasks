@@ -26,7 +26,7 @@ const io = new Server(httpServer, {
 
 io.on('connection', (socket) => {
   console.log('🟢 Novo socket conectado:', socket.id);
-  registerSocketEvents(socket);
+  registerSocketEvents(socket, io);
 });
 
 registerRoomSocket(io);

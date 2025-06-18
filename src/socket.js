@@ -1,43 +1,57 @@
 import { Server } from 'socket.io';
 
-export const ROOMS = new Map(); // roomId -> Set de userIds
+export const ROOMS = new Map();
 
-export default function registerSocketEvents(socket) {
-  // Evento: Criar sala
+export default function registerSocketEvents(socket, io) {
+  // Criar sala
   socket.on('create room', (roomId) => {
     console.log(`🛠️ Sala criada: ${roomId}`);
     socket.join(roomId);
+    ROOMS.set(roomId, []);
   });
 
-  // Evento: Cadastrar usuário
+  // Registrar username (opcional)
   socket.on('register user', (username) => {
     console.log(`👤 Usuário registrado: ${username}`);
     socket.data.username = username;
   });
 
-  socket.on('join room', ({roomId, userId}) => {
+  // Entrar em sala
+  socket.on('join room', ({ roomId, userId }) => {
+    console.log(`👥 Socket ${socket.id} (${userId}) entrou na sala ${roomId}`);
     socket.join(roomId);
-    console.log(`👥 Socket ${socket.id} - ${userId} - entrou na sala ${roomId}`);
 
-    // Enviar mensagem para todos da sala
-    socket.to(roomId).emit('user joined', {
-      user: socket.data.username || socket.id,
-      room: roomId,
-    });
+    if (!ROOMS.has(roomId)) {
+      ROOMS.set(roomId, []);
+    }
+
+    const users = ROOMS.get(roomId);
+    users.push({ id: socket.id, userId });
+    ROOMS.set(roomId, users);
+
+    console.log('io dentro do registerSocketEvents:', !!io);
+
+    io.to(roomId).emit('update-users', users);
   });
-}
 
-export function createSocketRoom(roomId, creatorId) {
-  ROOMS.set(roomId, new Set([creatorId]));
-}
+  // Desconectar
+  socket.on('disconnect', (reason) => {
+    console.log(`🔴 Socket ${socket.id} desconectou. Motivo: ${reason}`);
 
-export function addUserToRoom(roomId, userId) {
-  console.log(`Buscando sala ${roomId}`)
-  const room = ROOMS.get(roomId);
+    for (const [roomId, users] of ROOMS.entries()) {
+      const updatedUsers = users.filter(user => user.id !== socket.id);
 
-  if (!room) return false;
-  room.add(userId);
-  return true;
+      if (updatedUsers.length !== users.length) {
+        if (updatedUsers.length === 0) {
+          ROOMS.delete(roomId);
+          console.log(`🗑️ Sala ${roomId} foi removida (sem usuários).`);
+        } else {
+          ROOMS.set(roomId, updatedUsers);
+          io.to(roomId).emit('update-users', updatedUsers);
+        }
+      }
+    }
+  });
 }
 
 export function setupSocket(server) {
@@ -46,38 +60,33 @@ export function setupSocket(server) {
   });
 
   io.on('connection', (socket) => {
-    socket.on('register-user', ({ roomId, userId }) => {
-      socket.join(roomId);
-      console.log(`Usuário ${userId} entrou na sala ${roomId}`);
-    });
-
-    socket.on('disconnect', () => {
-      for (const [roomId, users] of ROOMS) {
-        users.delete(socket.id);
-        if (users.size === 0) ROOMS.delete(roomId);
-      }
-    });
+    console.log(`✅ Novo usuário conectado: ${socket.id}`);
+    registerSocketEvents(socket, io);
   });
 
-  socket.on('join room', roomId => {
-    console.log('[servidor] join room recebido:', roomId);
-    // lógica adicional aqui
-  });
-
+  return io;
 }
 
-export function checkifRoomExists(roomId) {
+export function createSocketRoom(roomId, creatorId) {
+  ROOMS.set(roomId, [{ id: creatorId, userId: creatorId }]);
+}
+
+export function addUserToRoom(roomId, userId) {
+  const room = ROOMS.get(roomId);
+  if (!room) return false;
+
+  room.push({ id: userId, userId });
+  ROOMS.set(roomId, room);
+  return true;
+}
+
+export function checkIfRoomExists(roomId) {
   if (!ROOMS.has(roomId)) {
     console.log(`Criando sala ${roomId}`);
-    ROOMS.set(roomId, new Set());
+    ROOMS.set(roomId, []);
     return true;
   }
 
-  console.log(`${roomId} - Sala já existe`);
+  console.log(`Sala ${roomId} já existe`);
   return false;
 }
-
-
-// -------
-
-

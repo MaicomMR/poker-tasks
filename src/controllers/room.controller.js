@@ -2,7 +2,7 @@
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { createSocketRoom, addUserToRoom, checkifRoomExists } from '../socket.js';
+import { createSocketRoom, addUserToRoom, checkIfRoomExists } from '../socket.js';
 
 const ROOMS = new Map(); // roomId -> [socketId]
 

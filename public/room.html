@@ -12,30 +12,45 @@
 
   <button id="leave">Sair da Sala</button>
 
-  <script>
+  <hr>
+  <ul id="user-list"></ul>
+
+  <script type="module">
+    import getCookie from '/utils/getCookie.js';
+    import { io } from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
+
+    const userId = getCookie('userId') || prompt("Para se conectar à sala, digite seu nome:");
+
+    // Se for a primeira vez, salva o userId no cookie
+    if (!getCookie('userId')) {
+      document.cookie = `userId=${userId}; path=/; max-age=31536000`;
+    }
+
+    const roomId = location.pathname.split('/').pop();
+    document.getElementById('room-id').textContent = roomId;
+
+    const socket = io('http://localhost:3000/');
+
+    socket.emit('join room', { roomId, userId });
+
+    // Atualiza lista de usuários
+    socket.on('update-users', (users) => {
+      const ul = document.getElementById('user-list');
+      ul.innerHTML = '';
+
+      users.forEach(user => {
+        const li = document.createElement('li');
+        li.textContent = user.userId || user.id; // Exibe userId (nome), se existir
+        ul.appendChild(li);
+      });
+    });
+
+    // Botão de sair
     document.getElementById("leave").onclick = () => {
       document.cookie = "roomId=; Max-Age=0; path=/";
       window.location.href = "/";
     };
   </script>
-
-  <script type="module">
-    import getCookie from '/utils/getCookie.js'
-
-    let userId = getCookie('userId');
-    if (!userId) {
-      userId = prompt("Para se conectar a sala, digite seu nome:");
-      document.cookie = "userId=" + userId + "; path=/; max-age=31536000";
-    }
-
-    const roomId = location.pathname.split('/').pop();
-    document.getElementById('room-id').textContent = roomId;
-    console.log(roomId, userId);
-
-    /* se precisar usar depois (ex.: Socket.IO) */
-    import { io } from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
-    const socket = io();
-    socket.emit('join room', { roomId, userId });
-  </script>
 </body>
+
 </html>
